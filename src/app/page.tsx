@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
@@ -42,10 +42,6 @@ export default function Home() {
     });
   };
 
-  const completedCount = (name) => {
-    return records[date]?.[name]?.filter(Boolean).length || 0;
-  };
-
   const handleNoteChange = (e, type) => {
     setNotes(prev => ({
       ...prev,
@@ -82,18 +78,18 @@ export default function Home() {
 
       {tab === "log" && (
         <div>
-          <h2 className="text-xl font-bold mb-2">{date} のトレーニング記録</h2>
+          <h2 className="text-2xl font-bold mb-2">{date} のトレーニング記録</h2>
           {exercises.map((ex, i) => (
             <Card key={i} className="mb-4">
               <CardContent className="p-4">
-                <div className="mb-2 font-semibold">{ex.name}（{ex.reps}回 x {ex.sets}セット）</div>
-                <div className="flex gap-2 mb-2">
+                <div className="mb-2 font-semibold text-lg">{ex.name}（{ex.reps}回 x {ex.sets}セット）</div>
+                <div className="flex gap-3 mb-2">
                   {[...Array(ex.sets)].map((_, idx) => (
                     <Checkbox
                       key={idx}
                       checked={records[date]?.[ex.name]?.[idx] || false}
                       onCheckedChange={() => handleCheckbox(ex.name, idx)}
-                      className="w-6 h-6"
+                      className="w-7 h-7 border-2 border-gray-600 rounded-sm"
                     />
                   ))}
                 </div>
@@ -105,6 +101,7 @@ export default function Home() {
             <Textarea
               value={notes[date]?.upper || ""}
               onChange={(e) => handleNoteChange(e, "upper")}
+              className="min-h-[100px]"
             />
           </div>
           <div className="mb-4">
@@ -112,6 +109,7 @@ export default function Home() {
             <Textarea
               value={notes[date]?.lower || ""}
               onChange={(e) => handleNoteChange(e, "lower")}
+              className="min-h-[100px]"
             />
           </div>
         </div>
