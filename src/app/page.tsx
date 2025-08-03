@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import RecordTab from './tabs/RecordTab';
-import SettingsTab from './tabs/SettingsTab';
+import RecordTab from '../tabs/RecordTab';
+import SettingsTab from '../tabs/SettingsTab';
 
 export default function HomePage() {
   const [tab, setTab] = useState<'record' | 'settings'>('record');
