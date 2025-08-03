@@ -1,90 +1,84 @@
-"use client";
+// app/layout.tsx（ルートレイアウト）
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="ja">
+      <body className="p-4">
+        {children}
+      </body>
+    </html>
+  );
+}
 
-import { useState } from "react";
-import { format } from "date-fns";
+// app/page.tsx（タブ付きトップページ）
+'use client';
 
-const defaultExercises = [
-  { name: "フル懸垂", sets: 3, reps: 5 },
-  { name: "ネガティブ懸垂", sets: 3, reps: 5 },
-  { name: "ダンベルベントオーバーロウ", sets: 5, reps: 15 },
-  { name: "ダンベルプルオーバー", sets: 3, reps: 10 },
-  { name: "ダンベルフライ", sets: 3, reps: 10 },
-  { name: "プッシュアップバー", sets: 3, reps: 15 },
-  { name: "バックランジ", sets: 3, reps: 20 },
-  { name: "ワイドスクワット", sets: 3, reps: 15 }
-];
+import { useState } from 'react';
+import RecordTab from './tabs/RecordTab';
+import SummaryTab from './tabs/SummaryTab';
+import SettingsTab from './tabs/SettingsTab';
 
 export default function Home() {
-  const [date, setDate] = useState(() => format(new Date(), "yyyy-MM-dd"));
-  const [records, setRecords] = useState<Record<string, Record<string, boolean[]>>>({});
-  const [notes, setNotes] = useState<Record<string, { upper?: string; lower?: string }>>({});
-  const [exercises, setExercises] = useState(defaultExercises);
-
-  const handleCheckbox = (name: string, setIndex: number) => {
-    setRecords((prev) => {
-      const day = prev[date] || {};
-      const sets = day[name] || [];
-      const newSets = [...sets];
-      newSets[setIndex] = !newSets[setIndex];
-      return {
-        ...prev,
-        [date]: {
-          ...day,
-          [name]: newSets
-        }
-      };
-    });
-  };
-
-  const handleNoteChange = (e: React.ChangeEvent<HTMLTextAreaElement>, type: "upper" | "lower") => {
-    setNotes((prev) => ({
-      ...prev,
-      [date]: {
-        ...prev[date],
-        [type]: e.target.value
-      }
-    }));
-  };
+  const tabs = ['記録用', '集計用', '設定用'];
+  const [activeTab, setActiveTab] = useState('記録用');
 
   return (
-    <div className="p-4 max-w-3xl mx-auto">
-      <h2 className="text-2xl font-bold mb-4">{date} のトレーニング記録</h2>
-      {exercises.map((ex, i) => (
-        <div key={i} className="mb-4 border rounded p-4">
-          <div className="mb-2 font-semibold text-lg">
-            {ex.name}（{ex.reps}回 x {ex.sets}セット）
-          </div>
-          <div className="flex gap-3 mb-2">
-            {[...Array(ex.sets)].map((_, idx) => (
-              <input
-                key={idx}
-                type="checkbox"
-                checked={records[date]?.[ex.name]?.[idx] || false}
-                onChange={() => handleCheckbox(ex.name, idx)}
-                className="w-7 h-7 border-2 border-gray-600 rounded-sm"
-              />
-            ))}
-          </div>
-        </div>
-      ))}
-      <div className="mb-4">
-        <div className="font-semibold">上半身メモ:</div>
-        <textarea
-          value={notes[date]?.upper || ""}
-          onChange={(e) => handleNoteChange(e, "upper")}
-          className="min-h-[100px] w-full border px-2 py-1 rounded"
-        />
+    <div>
+      <div className="flex space-x-4 border-b mb-4">
+        {tabs.map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={`pb-2 ${activeTab === tab ? 'border-b-2 border-black font-bold' : 'text-gray-500'}`}
+          >
+            {tab}
+          </button>
+        ))}
       </div>
-      <div className="mb-4">
-        <div className="font-semibold">下半身メモ:</div>
-        <textarea
-          value={notes[date]?.lower || ""}
-          onChange={(e) => handleNoteChange(e, "lower")}
-          className="min-h-[100px] w-full border px-2 py-1 rounded"
-        />
-      </div>
+
+      {activeTab === '記録用' && <RecordTab />}
+      {activeTab === '集計用' && <SummaryTab />}
+      {activeTab === '設定用' && <SettingsTab />}
     </div>
   );
 }
 
+// app/tabs/RecordTab.tsx
+'use client';
 
+import { useState } from 'react';
+import { format } from 'date-fns';
+import Calendar from 'react-calendar';
+import 'react-calendar/dist/Calendar.css';
+
+export default function RecordTab() {
+  const [date, setDate] = useState(new Date());
+  return (
+    <div>
+      <Calendar onChange={setDate} value={date} className="mb-4" />
+      <p className="mb-4">選択日: {format(date, 'yyyy/MM/dd')}</p>
+      {/* 記録入力UIをここに配置 */}
+    </div>
+  );
+}
+
+// app/tabs/SummaryTab.tsx
+'use client';
+
+export default function SummaryTab() {
+  return (
+    <div>
+      <p>週ごとの集計データ（未実装）</p>
+    </div>
+  );
+}
+
+// app/tabs/SettingsTab.tsx
+'use client';
+
+export default function SettingsTab() {
+  return (
+    <div>
+      <p>種目の追加・削除・編集・順序変更（未実装）</p>
+    </div>
+  );
+}
