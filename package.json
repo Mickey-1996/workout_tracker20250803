@@ -12,8 +12,8 @@
     "next": "13.4.19",
     "react": "18.2.0",
     "react-dom": "18.2.0",
-    "clsx": "^2.0.0",
-    "tailwind-variants": "^0.0.1",
+    "clsx": "^2.1.0",
+    "tailwind-variants": "^0.1.2",
     "lucide-react": "^0.284.0",
     "@radix-ui/react-checkbox": "^1.0.4"
   },
@@ -24,4 +24,5 @@
     "typescript": "^5.2.2"
   }
 }
+
 
