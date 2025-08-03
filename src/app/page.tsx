@@ -1,22 +1,39 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import RecordTab from '@/tabs/RecordTab';
-import SummaryTab from '@/tabs/SummaryTab';
-import SettingsTab from '@/tabs/SettingsTab';
+import RecordTab from './tabs/RecordTab';
+import SettingsTab from './tabs/SettingsTab';
 
-export default function Home() {
+export default function HomePage() {
+  const [tab, setTab] = useState<'record' | 'settings'>('record');
   const [selectedDate, setSelectedDate] = useState(new Date());
 
   return (
-    <main className="p-4">
-      <Tabs defaultValue="record" className="w-full">
-        <TabsList>
-          <TabsTrigger value="record">記録用</TabsTrigger>
-          <TabsTrigger value="summary">集計用</TabsTrigger>
-          <TabsTrigger value="settings">設定用</TabsTrigger>
-        </TabsList>
+    <div className="max-w-3xl mx-auto p-4">
+      <h1 className="text-2xl font-bold mb-4">トレーニング記録アプリ</h1>
 
-        <TabsContent value="record">
-          <RecordTab selectedDate={selectedDate} setSelectedDate={s
+      <div className="flex gap-2 mb-6">
+        <button
+          className={`px-4 py-2 rounded ${tab === 'record' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
+          onClick={() => setTab('record')}
+        >
+          記録用
+        </button>
+        <button
+          className={`px-4 py-2 rounded ${tab === 'settings' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
+          onClick={() => setTab('settings')}
+        >
+          設定用
+        </button>
+      </div>
+
+      {tab === 'record' && (
+        <RecordTab selectedDate={selectedDate} setSelectedDate={setSelectedDate} />
+      )}
+
+      {tab === 'settings' && (
+        <SettingsTab />
+      )}
+    </div>
+  );
+}
