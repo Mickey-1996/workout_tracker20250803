@@ -21,11 +21,25 @@ const lowerBodyExercises = [
   "ワイドスクワット"
 ];
 
+interface RecordData {
+  [date: string]: {
+    [type: string]: {
+      [name: string]: boolean[];
+    };
+  };
+}
+
+interface HistoryItem {
+  date: string;
+  memo: string;
+  data: RecordData[string];
+}
+
 export default function Home() {
-  const [date, setDate] = useState("");
-  const [records, setRecords] = useState({});
-  const [memo, setMemo] = useState("");
-  const [history, setHistory] = useState([]);
+  const [date, setDate] = useState<string>("");
+  const [records, setRecords] = useState<RecordData>({});
+  const [memo, setMemo] = useState<string>("");
+  const [history, setHistory] = useState<HistoryItem[]>([]);
   const [showToast, setShowToast] = useState(false);
 
   useEffect(() => {
@@ -47,7 +61,7 @@ export default function Home() {
     );
   }, [records, history]);
 
-  const handleCheckbox = (type, name, index) => {
+  const handleCheckbox = (type: string, name: string, index: number) => {
     const newRecords = { ...records };
     if (!newRecords[date]) newRecords[date] = {};
     if (!newRecords[date][type]) newRecords[date][type] = {};
@@ -70,7 +84,7 @@ export default function Home() {
     setTimeout(() => setShowToast(false), 2000);
   };
 
-  const renderExercise = (type, name) => {
+  const renderExercise = (type: string, name: string) => {
     const checks =
       records?.[date]?.[type]?.[name] || Array(5).fill(false);
     return (
@@ -97,7 +111,7 @@ export default function Home() {
     );
   };
 
-  const getCompletionRate = (type, name) => {
+  const getCompletionRate = (type: string, name: string): number => {
     let completed = 0;
     let total = 0;
     history.forEach((h) => {
