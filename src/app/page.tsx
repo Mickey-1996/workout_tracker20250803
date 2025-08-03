@@ -1,11 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { format } from "date-fns";
 
 const defaultExercises = [
@@ -24,7 +19,6 @@ export default function Home() {
   const [records, setRecords] = useState({});
   const [notes, setNotes] = useState({});
   const [exercises, setExercises] = useState(defaultExercises);
-  const [tab, setTab] = useState("log");
 
   const handleCheckbox = (name, setIndex) => {
     setRecords(prev => {
@@ -52,94 +46,45 @@ export default function Home() {
     }));
   };
 
-  const weeklySummary = () => {
-    const summary = {};
-    Object.entries(records).forEach(([recordDate, exercises]) => {
-      Object.entries(exercises).forEach(([name, sets]) => {
-        summary[name] = (summary[name] || 0) + sets.filter(Boolean).length;
-      });
-    });
-    return summary;
-  };
-
-  const updateExerciseName = (index, newName) => {
-    const updated = [...exercises];
-    updated[index].name = newName;
-    setExercises(updated);
-  };
-
   return (
     <div className="p-4 max-w-3xl mx-auto">
-      <div className="mb-4 flex gap-2">
-        <Button onClick={() => setTab("log")}>記録用</Button>
-        <Button onClick={() => setTab("summary")}>集計用</Button>
-        <Button onClick={() => setTab("settings")}>設定用</Button>
-      </div>
-
-      {tab === "log" && (
-        <div>
-          <h2 className="text-2xl font-bold mb-2">{date} のトレーニング記録</h2>
-          {exercises.map((ex, i) => (
-            <Card key={i} className="mb-4">
-              <CardContent className="p-4">
-                <div className="mb-2 font-semibold text-lg">{ex.name}（{ex.reps}回 x {ex.sets}セット）</div>
-                <div className="flex gap-3 mb-2">
-                  {[...Array(ex.sets)].map((_, idx) => (
-                    <Checkbox
-                      key={idx}
-                      checked={records[date]?.[ex.name]?.[idx] || false}
-                      onCheckedChange={() => handleCheckbox(ex.name, idx)}
-                      className="w-7 h-7 border-2 border-gray-600 rounded-sm"
-                    />
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-          <div className="mb-4">
-            <div className="font-semibold">上半身メモ:</div>
-            <Textarea
-              value={notes[date]?.upper || ""}
-              onChange={(e) => handleNoteChange(e, "upper")}
-              className="min-h-[100px]"
-            />
+      <h2 className="text-2xl font-bold mb-4">{date} のトレーニング記録</h2>
+      {exercises.map((ex, i) => (
+        <div key={i} className="mb-4 border rounded p-4">
+          <div className="mb-2 font-semibold text-lg">
+            {ex.name}（{ex.reps}回 x {ex.sets}セット）
           </div>
-          <div className="mb-4">
-            <div className="font-semibold">下半身メモ:</div>
-            <Textarea
-              value={notes[date]?.lower || ""}
-              onChange={(e) => handleNoteChange(e, "lower")}
-              className="min-h-[100px]"
-            />
-          </div>
-        </div>
-      )}
-
-      {tab === "summary" && (
-        <div>
-          <h2 className="text-xl font-bold mb-4">📊 週間集計</h2>
-          <ul className="list-disc pl-5">
-            {Object.entries(weeklySummary()).map(([name, count]) => (
-              <li key={name}>{name}：{count} 回</li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {tab === "settings" && (
-        <div>
-          <h2 className="text-xl font-bold mb-4">⚙️ 種目設定</h2>
-          {exercises.map((ex, i) => (
-            <div key={i} className="flex items-center gap-2 mb-2">
-              <Input
-                value={ex.name}
-                onChange={(e) => updateExerciseName(i, e.target.value)}
+          <div className="flex gap-3 mb-2">
+            {[...Array(ex.sets)].map((_, idx) => (
+              <input
+                key={idx}
+                type="checkbox"
+                checked={records[date]?.[ex.name]?.[idx] || false}
+                onChange={() => handleCheckbox(ex.name, idx)}
+                className="w-7 h-7 border-2 border-gray-600 rounded-sm"
               />
-              <span>{ex.reps}回 x {ex.sets}セット</span>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-      )}
+      ))}
+      <div className="mb-4">
+        <div className="font-semibold">上半身メモ:</div>
+        <textarea
+          value={notes[date]?.upper || ""}
+          onChange={(e) => handleNoteChange(e, "upper")}
+          className="min-h-[100px] w-full border px-2 py-1 rounded"
+        />
+      </div>
+      <div className="mb-4">
+        <div className="font-semibold">下半身メモ:</div>
+        <textarea
+          value={notes[date]?.lower || ""}
+          onChange={(e) => handleNoteChange(e, "lower")}
+          className="min-h-[100px] w-full border px-2 py-1 rounded"
+        />
+      </div>
     </div>
   );
 }
+
+
