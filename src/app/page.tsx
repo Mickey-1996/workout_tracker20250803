@@ -7,20 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 
-const upperBodyExercises = [
-  "フル懸垂",
-  "ネガティブ懸垂",
-  "ベントオーバーロウ",
-  "ダンベルプルオーバー",
-  "ダンベルフライ",
-  "腕立て伏せ"
-];
-
-const lowerBodyExercises = [
-  "バックランジ",
-  "ワイドスクワット"
-];
-
 interface RecordData {
   [date: string]: {
     [type: string]: {
@@ -31,16 +17,34 @@ interface RecordData {
 
 interface HistoryItem {
   date: string;
-  memo: string;
+  memo: {
+    upper: string;
+    lower: string;
+  };
   data: RecordData[string];
 }
 
 export default function Home() {
   const [date, setDate] = useState<string>("");
   const [records, setRecords] = useState<RecordData>({});
-  const [memo, setMemo] = useState<string>("");
+  const [memoUpper, setMemoUpper] = useState<string>("");
+  const [memoLower, setMemoLower] = useState<string>("");
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [showToast, setShowToast] = useState(false);
+  const [upperBodyExercises, setUpperBodyExercises] = useState<string[]>([
+    "フル懸垂",
+    "ネガティブ懸垂",
+    "ベントオーバーロウ",
+    "ダンベルプルオーバー",
+    "ダンベルフライ",
+    "腕立て伏せ"
+  ]);
+  const [lowerBodyExercises, setLowerBodyExercises] = useState<string[]>([
+    "バックランジ",
+    "ワイドスクワット"
+  ]);
+  const [newUpperExercise, setNewUpperExercise] = useState("");
+  const [newLowerExercise, setNewLowerExercise] = useState("");
 
   useEffect(() => {
     const today = new Date().toISOString().split("T")[0];
@@ -51,15 +55,17 @@ export default function Home() {
       const parsed = JSON.parse(saved);
       setRecords(parsed.records || {});
       setHistory(parsed.history || []);
+      setUpperBodyExercises(parsed.upperBodyExercises || upperBodyExercises);
+      setLowerBodyExercises(parsed.lowerBodyExercises || lowerBodyExercises);
     }
   }, []);
 
   useEffect(() => {
     localStorage.setItem(
       "workout-records",
-      JSON.stringify({ records, history })
+      JSON.stringify({ records, history, upperBodyExercises, lowerBodyExercises })
     );
-  }, [records, history]);
+  }, [records, history, upperBodyExercises, lowerBodyExercises]);
 
   const handleCheckbox = (type: string, name: string, index: number) => {
     const newRecords = { ...records };
@@ -75,11 +81,12 @@ export default function Home() {
 
   const saveMemo = () => {
     const newHistory = [
-      { date, memo, data: records[date] || {} },
+      { date, memo: { upper: memoUpper, lower: memoLower }, data: records[date] || {} },
       ...history.filter((h) => h.date !== date)
     ].slice(0, 14);
     setHistory(newHistory);
-    setMemo("");
+    setMemoUpper("");
+    setMemoLower("");
     setShowToast(true);
     setTimeout(() => setShowToast(false), 2000);
   };
@@ -90,8 +97,8 @@ export default function Home() {
     return (
       <Card className="mb-2">
         <CardContent className="p-4">
-          <div className="font-semibold mb-2">{name}</div>
-          <div className="flex gap-2 mb-2">
+          <div className="font-semibold mb-2 text-sm">{name}</div>
+          <div className="flex gap-3 mb-2 ml-8">
             {checks.map((c, i) => (
               <Checkbox
                 key={i}
@@ -126,17 +133,33 @@ export default function Home() {
 
   const getWeeklySummary = () => {
     const today = new Date();
-    const summary = [];
+    const summary: { date: string; count: number; sets: number }[] = [];
     for (let i = 0; i < 14; i++) {
       const d = new Date(today);
       d.setDate(today.getDate() - i);
       const key = d.toISOString().split("T")[0];
       const r = records[key];
+      let sets = 0;
       if (r) {
-        summary.push({ date: key, count: Object.keys(r).length });
+        for (const type of Object.keys(r)) {
+          for (const name of Object.keys(r[type])) {
+            sets += r[type][name].filter(Boolean).length;
+          }
+        }
+        summary.push({ date: key, count: Object.keys(r).length, sets });
       }
     }
     return summary;
+  };
+
+  const addExercise = (type: "upper" | "lower") => {
+    if (type === "upper" && newUpperExercise.trim()) {
+      setUpperBodyExercises([...upperBodyExercises, newUpperExercise.trim()]);
+      setNewUpperExercise("");
+    } else if (type === "lower" && newLowerExercise.trim()) {
+      setLowerBodyExercises([...lowerBodyExercises, newLowerExercise.trim()]);
+      setNewLowerExercise("");
+    }
   };
 
   const weeklySummary = getWeeklySummary();
@@ -151,18 +174,42 @@ export default function Home() {
         className="mb-4"
       />
 
-      <h2 className="text-lg font-semibold mt-4">上半身トレーニング</h2>
+      <h2 className="text-xl font-semibold mt-4">上半身トレーニング</h2>
+      <div className="flex gap-2 mb-2">
+        <Input
+          placeholder="種目を追加"
+          value={newUpperExercise}
+          onChange={(e) => setNewUpperExercise(e.target.value)}
+        />
+        <Button onClick={() => addExercise("upper")}>追加</Button>
+      </div>
       {upperBodyExercises.map((name) => renderExercise("upper", name))}
 
-      <h2 className="text-lg font-semibold mt-4">下半身トレーニング</h2>
+      <Textarea
+        placeholder="上半身メモを書く..."
+        value={memoUpper}
+        onChange={(e) => setMemoUpper(e.target.value)}
+        className="my-4 h-28"
+      />
+
+      <h2 className="text-xl font-semibold mt-4">下半身トレーニング</h2>
+      <div className="flex gap-2 mb-2">
+        <Input
+          placeholder="種目を追加"
+          value={newLowerExercise}
+          onChange={(e) => setNewLowerExercise(e.target.value)}
+        />
+        <Button onClick={() => addExercise("lower")}>追加</Button>
+      </div>
       {lowerBodyExercises.map((name) => renderExercise("lower", name))}
 
       <Textarea
-        placeholder="メモを書く..."
-        value={memo}
-        onChange={(e) => setMemo(e.target.value)}
-        className="my-4"
+        placeholder="下半身メモを書く..."
+        value={memoLower}
+        onChange={(e) => setMemoLower(e.target.value)}
+        className="my-4 h-28"
       />
+
       <Button onClick={saveMemo}>💾 メモと記録を保存</Button>
 
       {showToast && (
@@ -173,7 +220,7 @@ export default function Home() {
       <ul className="text-sm list-disc list-inside mb-4">
         {weeklySummary.map((item) => (
           <li key={item.date}>
-            {item.date}：{item.count}種目記録
+            {item.date}：{item.count}種目／{item.sets}セット
           </li>
         ))}
       </ul>
