@@ -21,11 +21,13 @@ const lowerBodyExercises = [
   "ワイドスクワット"
 ];
 
+type RecordType = "upper" | "lower";
+
 export default function Home() {
   const [date, setDate] = useState("");
-  const [records, setRecords] = useState({});
+  const [records, setRecords] = useState<Record<string, any>>({});
   const [memo, setMemo] = useState("");
-  const [history, setHistory] = useState([]);
+  const [history, setHistory] = useState<any[]>([]);
 
   useEffect(() => {
     const today = new Date().toISOString().split("T")[0];
@@ -46,7 +48,11 @@ export default function Home() {
     );
   }, [records, history]);
 
-  const handleCheckbox = (type, name, index) => {
+  const handleCheckbox = (
+    type: RecordType,
+    name: string,
+    index: number
+  ) => {
     const newRecords = { ...records };
     if (!newRecords[date]) newRecords[date] = {};
     if (!newRecords[date][type]) newRecords[date][type] = {};
@@ -67,7 +73,7 @@ export default function Home() {
     setMemo("");
   };
 
-  const renderExercise = (type, name) => {
+  const renderExercise = (type: RecordType, name: string) => {
     const checks =
       records?.[date]?.[type]?.[name] || Array(5).fill(false);
     return (
@@ -75,7 +81,7 @@ export default function Home() {
         <CardContent className="p-4">
           <div className="font-semibold mb-2">{name}</div>
           <div className="flex gap-2">
-            {checks.map((c, i) => (
+            {checks.map((c: boolean, i: number) => (
               <Checkbox
                 key={i}
                 checked={c}
@@ -88,7 +94,7 @@ export default function Home() {
     );
   };
 
-  const getCompletionRate = (type, name) => {
+  const getCompletionRate = (type: RecordType, name: string) => {
     let completed = 0;
     let total = 0;
     history.forEach((h) => {
@@ -165,3 +171,5 @@ export default function Home() {
     </main>
   );
 }
+
+
