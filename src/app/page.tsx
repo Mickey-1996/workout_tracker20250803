@@ -16,12 +16,12 @@ const defaultExercises = [
 
 export default function Home() {
   const [date, setDate] = useState(() => format(new Date(), "yyyy-MM-dd"));
-  const [records, setRecords] = useState({});
-  const [notes, setNotes] = useState({});
+  const [records, setRecords] = useState<Record<string, Record<string, boolean[]>>>({});
+  const [notes, setNotes] = useState<Record<string, { upper?: string; lower?: string }>>({});
   const [exercises, setExercises] = useState(defaultExercises);
 
-  const handleCheckbox = (name, setIndex) => {
-    setRecords(prev => {
+  const handleCheckbox = (name: string, setIndex: number) => {
+    setRecords((prev) => {
       const day = prev[date] || {};
       const sets = day[name] || [];
       const newSets = [...sets];
@@ -36,8 +36,8 @@ export default function Home() {
     });
   };
 
-  const handleNoteChange = (e, type) => {
-    setNotes(prev => ({
+  const handleNoteChange = (e: React.ChangeEvent<HTMLTextAreaElement>, type: "upper" | "lower") => {
+    setNotes((prev) => ({
       ...prev,
       [date]: {
         ...prev[date],
