@@ -1,19 +1,9 @@
+import { ReactNode } from "react";
 
-import * as React from "react";
-import { cn } from "@/lib/utils";
+export function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
+  return <div className={`border rounded-md shadow-sm ${className}`}>{children}</div>;
+}
 
-const Card = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
-  ({ className, ...props }, ref) => (
-    <div ref={ref} className={cn("rounded-lg border bg-card text-card-foreground shadow-sm", className)} {...props} />
-  )
-);
-Card.displayName = "Card";
-
-const CardContent = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
-  ({ className, ...props }, ref) => (
-    <div ref={ref} className={cn("p-6 pt-0", className)} {...props} />
-  )
-);
-CardContent.displayName = "CardContent";
-
-export { Card, CardContent };
+export function CardContent({ children, className = "" }: { children: ReactNode; className?: string }) {
+  return <div className={`p-4 ${className}`}>{children}</div>;
+}
