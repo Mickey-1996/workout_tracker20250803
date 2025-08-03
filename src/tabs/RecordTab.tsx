@@ -5,13 +5,19 @@ import { format } from 'date-fns';
 import Calendar from '@/components/ui/Calendar';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 
 type Props = {
   selectedDate: Date;
   setSelectedDate: (date: Date) => void;
 };
 
-const defaultExercises = ['懸垂', 'ダンベルロー', 'プルオーバー', 'プッシュアップ'];
+const defaultExercises = [
+  '懸垂',
+  'ダンベルロー',
+  'プルオーバー',
+  'プッシュアップ',
+];
 
 export default function RecordTab({ selectedDate, setSelectedDate }: Props) {
   const [records, setRecords] = useState<Record<string, Record<string, boolean[]>>>({});
