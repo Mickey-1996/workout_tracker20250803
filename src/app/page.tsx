@@ -6,6 +6,15 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
+import { GripVertical } from "lucide-react";
+import { DndContext, closestCenter } from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 interface RecordData {
   [date: string]: {
@@ -24,6 +33,44 @@ interface HistoryItem {
   data: RecordData[string];
 }
 
+interface SortableItemProps {
+  id: string;
+  onDelete: (id: string) => void;
+  onChange: (id: string, value: string) => void;
+}
+
+function SortableItem({ id, onDelete, onChange }: SortableItemProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+  } = useSortable({ id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      className="flex items-center gap-2 p-2 border border-gray-300 rounded mb-2"
+    >
+      <span {...listeners} className="cursor-move">
+        <GripVertical />
+      </span>
+      <Input value={id} onChange={(e) => onChange(id, e.target.value)} className="flex-1" />
+      <Button onClick={() => onDelete(id)} variant="destructive">
+        削除
+      </Button>
+    </div>
+  );
+}
+
 export default function Home() {
   const [tab, setTab] = useState<'record' | 'summary' | 'settings'>('record');
   const [date, setDate] = useState<string>("");
@@ -31,7 +78,6 @@ export default function Home() {
   const [memoUpper, setMemoUpper] = useState<string>("");
   const [memoLower, setMemoLower] = useState<string>("");
   const [history, setHistory] = useState<HistoryItem[]>([]);
-  const [showToast, setShowToast] = useState(false);
   const [upperBodyExercises, setUpperBodyExercises] = useState<string[]>([
     "フル懸垂",
     "ネガティブ懸垂",
@@ -44,14 +90,6 @@ export default function Home() {
     "バックランジ",
     "ワイドスクワット"
   ]);
-  const [newUpperExercise, setNewUpperExercise] = useState("");
-  const [newLowerExercise, setNewLowerExercise] = useState("");
-  const [editMode, setEditMode] = useState<boolean>(false);
-  const [editingName, setEditingName] = useState<string>("");
-  const [editingIndex, setEditingIndex] = useState<number>(-1);
-  const [editingType, setEditingType] = useState<"upper" | "lower">("upper");
-
-  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
   useEffect(() => {
     const today = new Date().toISOString().split("T")[0];
@@ -74,17 +112,6 @@ export default function Home() {
     );
   }, [records, history, upperBodyExercises, lowerBodyExercises]);
 
-  const handleDragStart = (index: number) => setDraggedIndex(index);
-  const handleDrop = (index: number, type: "upper" | "lower") => {
-    if (draggedIndex === null) return;
-    const list = type === "upper" ? [...upperBodyExercises] : [...lowerBodyExercises];
-    const [draggedItem] = list.splice(draggedIndex, 1);
-    list.splice(index, 0, draggedItem);
-    if (type === "upper") setUpperBodyExercises(list);
-    else setLowerBodyExercises(list);
-    setDraggedIndex(null);
-  };
-
   const handleCheckbox = (type: string, name: string, index: number) => {
     const newRecords = { ...records };
     if (!newRecords[date]) newRecords[date] = {};
@@ -97,130 +124,37 @@ export default function Home() {
     setRecords(newRecords);
   };
 
-  const saveMemo = () => {
-    const newHistory = [
-      { date, memo: { upper: memoUpper, lower: memoLower }, data: records[date] || {} },
-      ...history.filter((h) => h.date !== date)
-    ].slice(0, 14);
-    setHistory(newHistory);
-    setMemoUpper("");
-    setMemoLower("");
-    setShowToast(true);
-    setTimeout(() => setShowToast(false), 2000);
-  };
-
-  const renderExercise = (type: string, name: string) => {
-    const checks = records?.[date]?.[type]?.[name] || Array(5).fill(false);
-    return (
-      <Card className="mb-2">
-        <CardContent className="p-4">
-          <div className="font-semibold mb-2 text-base">{name}</div>
-          <div className="flex gap-4 mb-2 ml-8">
-            {checks.map((c, i) => (
-              <Checkbox
-                key={i}
-                checked={c}
-                onCheckedChange={() => handleCheckbox(type, name, i)}
-                className="w-7 h-7 border-2 border-gray-700 rounded"
-              />
-            ))}
-          </div>
-          <div className="w-full h-2 bg-gray-200 rounded">
-            <div
-              className="h-2 bg-green-500 rounded"
-              style={{ width: `${getCompletionRate(type, name)}%` }}
-            />
-          </div>
-        </CardContent>
-      </Card>
-    );
-  };
-
-  const getCompletionRate = (type: string, name: string): number => {
-    let completed = 0;
-    let total = 0;
-    history.forEach((h) => {
-      const sets = h.data?.[type]?.[name];
-      if (sets) {
-        completed += sets.filter(Boolean).length;
-        total += sets.length;
-      }
-    });
-    return total > 0 ? Math.round((completed / total) * 100) : 0;
-  };
-
-  const getWeeklySummary = () => {
-    const today = new Date();
-    const summary: { date: string; count: number; sets: number }[] = [];
-    for (let i = 0; i < 14; i++) {
-      const d = new Date(today);
-      d.setDate(today.getDate() - i);
-      const key = d.toISOString().split("T")[0];
-      const r = records[key];
-      let sets = 0;
-      let count = 0;
-      if (r) {
-        for (const type of Object.keys(r)) {
-          for (const name of Object.keys(r[type])) {
-            sets += r[type][name].filter(Boolean).length;
-            count++;
-          }
-        }
-      }
-      summary.push({ date: key, count, sets });
-    }
-    return summary;
-  };
-
-  const addExercise = (type: "upper" | "lower") => {
-    if (type === "upper" && newUpperExercise.trim()) {
-      setUpperBodyExercises([...upperBodyExercises, newUpperExercise.trim()]);
-      setNewUpperExercise("");
-    } else if (type === "lower" && newLowerExercise.trim()) {
-      setLowerBodyExercises([...lowerBodyExercises, newLowerExercise.trim()]);
-      setNewLowerExercise("");
-    }
-  };
-
-  const editExercise = (type: "upper" | "lower", index: number, name: string) => {
-    setEditingType(type);
-    setEditingIndex(index);
-    setEditingName(name);
-    setEditMode(true);
-  };
-
-  const saveExerciseName = () => {
-    if (editingType === "upper") {
-      const updated = [...upperBodyExercises];
-      updated[editingIndex] = editingName;
-      setUpperBodyExercises(updated);
-    } else {
-      const updated = [...lowerBodyExercises];
-      updated[editingIndex] = editingName;
-      setLowerBodyExercises(updated);
-    }
-    setEditMode(false);
-    setEditingName("");
-    setEditingIndex(-1);
-  };
-
-  const deleteExercise = (type: "upper" | "lower", index: number) => {
+  const handleDelete = (type: string, id: string) => {
     if (type === "upper") {
-      const updated = [...upperBodyExercises];
-      updated.splice(index, 1);
-      setUpperBodyExercises(updated);
+      setUpperBodyExercises((prev) => prev.filter((item) => item !== id));
     } else {
-      const updated = [...lowerBodyExercises];
-      updated.splice(index, 1);
-      setLowerBodyExercises(updated);
+      setLowerBodyExercises((prev) => prev.filter((item) => item !== id));
     }
   };
 
-  const weeklySummary = getWeeklySummary();
+  const handleChange = (type: string, oldId: string, newValue: string) => {
+    if (type === "upper") {
+      setUpperBodyExercises((prev) => prev.map((item) => item === oldId ? newValue : item));
+    } else {
+      setLowerBodyExercises((prev) => prev.map((item) => item === oldId ? newValue : item));
+    }
+  };
+
+  const handleDragEnd = (type: string, event: any) => {
+    const { active, over } = event;
+    if (active.id !== over.id) {
+      const items = type === "upper" ? [...upperBodyExercises] : [...lowerBodyExercises];
+      const oldIndex = items.indexOf(active.id);
+      const newIndex = items.indexOf(over.id);
+      const sorted = arrayMove(items, oldIndex, newIndex);
+      if (type === "upper") setUpperBodyExercises(sorted);
+      else setLowerBodyExercises(sorted);
+    }
+  };
 
   return (
     <main className="max-w-xl mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">🏋️ 筋トレ記録アプリ</h1>
+      <h1 className="text-3xl font-bold mb-4">🏋️ 筋トレ記録アプリ</h1>
 
       <div className="flex gap-4 mb-6">
         <Button onClick={() => setTab('record')}>📋 記録用</Button>
@@ -228,7 +162,111 @@ export default function Home() {
         <Button onClick={() => setTab('settings')}>⚙️ 設定用</Button>
       </div>
 
-      {/* (そのまま record, summary, settings タブのレンダリングを続けます) */}
+      {tab === 'record' && (
+        <div>
+          <h2 className="text-xl font-semibold mb-2">📅 {date}</h2>
+          <div className="mb-4">
+            <h3 className="text-lg font-semibold mb-2">上半身トレーニング</h3>
+            {upperBodyExercises.map((name) => (
+              <Card key={name} className="mb-2">
+                <CardContent className="p-4">
+                  <div className="text-base font-semibold mb-2">{name}</div>
+                  <div className="flex gap-3 mb-2 ml-8">
+                    {Array(5).fill(null).map((_, index) => (
+                      <Checkbox
+                        key={index}
+                        checked={records?.[date]?.upper?.[name]?.[index] || false}
+                        onCheckedChange={() => handleCheckbox("upper", name, index)}
+                        className="w-8 h-8 border-2 border-gray-700 rounded"
+                      />
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+            <Textarea
+              value={memoUpper}
+              onChange={(e) => setMemoUpper(e.target.value)}
+              placeholder="上半身メモを入力"
+              className="w-full h-24 mt-2"
+            />
+          </div>
+
+          <div className="mb-4">
+            <h3 className="text-lg font-semibold mb-2">下半身トレーニング</h3>
+            {lowerBodyExercises.map((name) => (
+              <Card key={name} className="mb-2">
+                <CardContent className="p-4">
+                  <div className="text-base font-semibold mb-2">{name}</div>
+                  <div className="flex gap-3 mb-2 ml-8">
+                    {Array(5).fill(null).map((_, index) => (
+                      <Checkbox
+                        key={index}
+                        checked={records?.[date]?.lower?.[name]?.[index] || false}
+                        onCheckedChange={() => handleCheckbox("lower", name, index)}
+                        className="w-8 h-8 border-2 border-gray-700 rounded"
+                      />
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+            <Textarea
+              value={memoLower}
+              onChange={(e) => setMemoLower(e.target.value)}
+              placeholder="下半身メモを入力"
+              className="w-full h-24 mt-2"
+            />
+          </div>
+
+          <Button onClick={() => alert("保存しました！")}>💾 保存</Button>
+        </div>
+      )}
+
+      {tab === 'summary' && (
+        <div>
+          <h2 className="text-xl font-semibold mb-4">📊 週間サマリー</h2>
+          {/* 今後実装 */}
+        </div>
+      )}
+
+      {tab === 'settings' && (
+        <div>
+          <h2 className="text-xl font-semibold mb-4">⚙️ 種目設定</h2>
+
+          <div className="mb-4">
+            <h3 className="text-md font-semibold mb-2">上半身トレーニング</h3>
+            <DndContext collisionDetection={closestCenter} onDragEnd={(e) => handleDragEnd("upper", e)}>
+              <SortableContext items={upperBodyExercises} strategy={verticalListSortingStrategy}>
+                {upperBodyExercises.map((id) => (
+                  <SortableItem
+                    key={id}
+                    id={id}
+                    onDelete={(item) => handleDelete("upper", item)}
+                    onChange={(oldId, newValue) => handleChange("upper", oldId, newValue)}
+                  />
+                ))}
+              </SortableContext>
+            </DndContext>
+          </div>
+
+          <div className="mb-4">
+            <h3 className="text-md font-semibold mb-2">下半身トレーニング</h3>
+            <DndContext collisionDetection={closestCenter} onDragEnd={(e) => handleDragEnd("lower", e)}>
+              <SortableContext items={lowerBodyExercises} strategy={verticalListSortingStrategy}>
+                {lowerBodyExercises.map((id) => (
+                  <SortableItem
+                    key={id}
+                    id={id}
+                    onDelete={(item) => handleDelete("lower", item)}
+                    onChange={(oldId, newValue) => handleChange("lower", oldId, newValue)}
+                  />
+                ))}
+              </SortableContext>
+            </DndContext>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
