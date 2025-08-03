@@ -21,13 +21,12 @@ const lowerBodyExercises = [
   "ワイドスクワット"
 ];
 
-type RecordType = "upper" | "lower";
-
 export default function Home() {
   const [date, setDate] = useState("");
-  const [records, setRecords] = useState<Record<string, any>>({});
+  const [records, setRecords] = useState({});
   const [memo, setMemo] = useState("");
-  const [history, setHistory] = useState<any[]>([]);
+  const [history, setHistory] = useState([]);
+  const [showToast, setShowToast] = useState(false);
 
   useEffect(() => {
     const today = new Date().toISOString().split("T")[0];
@@ -48,11 +47,7 @@ export default function Home() {
     );
   }, [records, history]);
 
-  const handleCheckbox = (
-    type: RecordType,
-    name: string,
-    index: number
-  ) => {
+  const handleCheckbox = (type, name, index) => {
     const newRecords = { ...records };
     if (!newRecords[date]) newRecords[date] = {};
     if (!newRecords[date][type]) newRecords[date][type] = {};
@@ -71,17 +66,19 @@ export default function Home() {
     ].slice(0, 14);
     setHistory(newHistory);
     setMemo("");
+    setShowToast(true);
+    setTimeout(() => setShowToast(false), 2000);
   };
 
-  const renderExercise = (type: RecordType, name: string) => {
+  const renderExercise = (type, name) => {
     const checks =
       records?.[date]?.[type]?.[name] || Array(5).fill(false);
     return (
       <Card className="mb-2">
         <CardContent className="p-4">
           <div className="font-semibold mb-2">{name}</div>
-          <div className="flex gap-2">
-            {checks.map((c: boolean, i: number) => (
+          <div className="flex gap-2 mb-2">
+            {checks.map((c, i) => (
               <Checkbox
                 key={i}
                 checked={c}
@@ -89,12 +86,18 @@ export default function Home() {
               />
             ))}
           </div>
+          <div className="w-full h-2 bg-gray-200 rounded">
+            <div
+              className="h-2 bg-green-500 rounded"
+              style={{ width: `${getCompletionRate(type, name)}%` }}
+            />
+          </div>
         </CardContent>
       </Card>
     );
   };
 
-  const getCompletionRate = (type: RecordType, name: string) => {
+  const getCompletionRate = (type, name) => {
     let completed = 0;
     let total = 0;
     history.forEach((h) => {
@@ -148,6 +151,10 @@ export default function Home() {
       />
       <Button onClick={saveMemo}>💾 メモと記録を保存</Button>
 
+      {showToast && (
+        <div className="mt-2 text-green-600">✅ 記録を保存しました！</div>
+      )}
+
       <h3 className="text-md font-semibold mt-6">📅 過去14日間の記録履歴</h3>
       <ul className="text-sm list-disc list-inside mb-4">
         {weeklySummary.map((item) => (
@@ -171,5 +178,3 @@ export default function Home() {
     </main>
   );
 }
-
-
